@@ -1,0 +1,26 @@
+# general
+biff = no
+append_dot_mydomain = no
+mydomain = pfohl.space
+mailbox_size_limit = 0
+recipient_delimiter = +
+message_size_limit = 40960000
+compatibility_level = 2
+readme_directory = no
+
+# network
+inet_interfaces = 0.0.0.0, [::]
+inet_protocols = all
+mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+mydestination = $myhostname, localhost.$mydomain, localhost, lists.pfohl.space
+
+# smtpd
+smtpd_banner = $myhostname ESMTP
+smtpd_relay_restrictions = permit_mynetworks, reject_unauth_destination
+
+# aliases
+alias_maps =
+  hash:/etc/aliases,
+  hash:/var/lib/mailman/data/aliases
+alias_database =
+  hash:/etc/aliases
