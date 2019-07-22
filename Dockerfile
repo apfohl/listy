@@ -1,36 +1,59 @@
 FROM alpine:3.10
 
+ARG MAILMAN_MINOR_VERSION=2.1
+ARG MAILMAN_PATCH_VERSION=29
+ARG MAILMAN_VERSION=$MAILMAN_MINOR_VERSION.$MAILMAN_PATCH_VERSION
+
 RUN apk update
-RUN apk add bash vim
+RUN apk add vim
 
 # General
 RUN mkdir -p /data/logs
 
 # Supervisor
 RUN apk add supervisor
-RUN mkdir -p /data/supervisord/
+RUN mkdir -p /etc/supervisord.d
 COPY supervisord/supervisord.conf /etc/supervisord.conf
+
+# NGINX
+RUN apk add nginx
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY nginx/supervisord.conf /etc/supervisord.d/nginx.conf
+
+# PostSRSd
+RUN apk add postsrsd
+RUN mkdir -p /var/lib/postsrsd
+RUN dd if=/dev/urandom bs=18 count=1 | base64 > /etc/postsrsd.secret
+COPY postsrsd/supervisord.conf /etc/supervisord.d/postsrsd.conf
 
 # Postfix
 RUN apk add postfix
 COPY postfix/master.cf /etc/postfix/master.cf
 COPY postfix/main.cf /etc/postfix/main.cf
-
-# PostSRSd
-RUN apk add postsrsd
+COPY postfix/supervisord.conf /etc/supervisord.d/postfix.conf
 
 # Mailman
-RUN apk add wget python2 python2-dev py2-pip alpine-sdk
+RUN apk add python2 python2-dev py2-pip alpine-sdk
 RUN addgroup -S mailman && adduser -S mailman -G mailman
 RUN pip install dnspython
-RUN wget https://launchpad.net/mailman/2.1/2.1.29/+download/mailman-2.1.29.tgz
-RUN tar xf mailman-2.1.29.tgz
+ADD https://launchpad.net/mailman/$MAILMAN_MINOR_VERSION/$MAILMAN_VERSION/+download/mailman-$MAILMAN_VERSION.tgz /
+RUN tar xf mailman-$MAILMAN_VERSION.tgz
 RUN mkdir -p /usr/local/mailman
 RUN chown root:mailman /usr/local/mailman
 RUN chmod g+s /usr/local/mailman
 RUN chmod 02775 /usr/local/mailman
-RUN cd mailman-2.1.29 && ./configure && make install
-RUN cd .. && rm -r mailman-2.1.29 mailman-2.1.29.tgz
+RUN cd mailman-$MAILMAN_VERSION && ./configure && make install
+RUN cd .. && rm -r mailman-$MAILMAN_VERSION mailman-$MAILMAN_VERSION.tgz
+COPY mailman/mm_cfg.py /usr/local/mailman/Mailman/mm_cfg.py
+COPY mailman/nginx.conf /etc/nginx/conf.d/mailman.conf
+
+# FCGI Wrap
+RUN apk add fcgiwrap
+COPY fcgiwrap/supervisord.conf /etc/supervisord.d/fcgiwrap.conf
+
+# Network
+EXPOSE 25/tcp 80/tcp
 
 # Entrypoint
 ENTRYPOINT ["supervisord", "-c", "/etc/supervisord.conf"]
