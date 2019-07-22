@@ -39,12 +39,12 @@ RUN addgroup -S mailman && adduser -S mailman -G mailman
 RUN pip install dnspython
 ADD https://launchpad.net/mailman/$MAILMAN_MINOR_VERSION/$MAILMAN_VERSION/+download/mailman-$MAILMAN_VERSION.tgz /
 RUN tar xf mailman-$MAILMAN_VERSION.tgz
-RUN mkdir -p /usr/local/mailman
-RUN chown root:mailman /usr/local/mailman
-RUN chmod g+s /usr/local/mailman
-RUN chmod 02775 /usr/local/mailman
-RUN cd mailman-$MAILMAN_VERSION && ./configure && make install
-RUN cd .. && rm -r mailman-$MAILMAN_VERSION mailman-$MAILMAN_VERSION.tgz
+RUN mkdir -p /usr/local/mailman /data/mailman
+RUN chown root:mailman /usr/local/mailman /data/mailman
+RUN chmod g+s /usr/local/mailman /data/mailman
+RUN chmod 02775 /usr/local/mailman /data/mailman
+RUN cd mailman-$MAILMAN_VERSION && ./configure --with-var-prefix=/data/mailman && make install
+RUN rm -r mailman-$MAILMAN_VERSION mailman-$MAILMAN_VERSION.tgz
 COPY mailman/mm_cfg.py /usr/local/mailman/Mailman/mm_cfg.py
 COPY mailman/nginx.conf /etc/nginx/conf.d/mailman.conf
 
