@@ -56,4 +56,5 @@ COPY fcgiwrap/supervisord.conf /etc/supervisord.d/fcgiwrap.conf
 EXPOSE 25/tcp 80/tcp
 
 # Entrypoint
-ENTRYPOINT ["supervisord", "-c", "/etc/supervisord.conf"]
+COPY boot.sh /boot.sh
+ENTRYPOINT ["sh", "boot.sh"]
