@@ -6,6 +6,19 @@ RUN apk add bash vim
 # General
 RUN mkdir -p /data/logs
 
+# Supervisor
+RUN apk add supervisor
+RUN mkdir -p /data/supervisord/
+COPY supervisord/supervisord.conf /etc/supervisord.conf
+
+# Postfix
+RUN apk add postfix
+COPY postfix/master.cf /etc/postfix/master.cf
+COPY postfix/main.cf /etc/postfix/main.cf
+
+# PostSRSd
+RUN apk add postsrsd
+
 # Mailman
 RUN apk add wget python2 python2-dev py2-pip alpine-sdk
 RUN addgroup -S mailman && adduser -S mailman -G mailman
@@ -18,16 +31,6 @@ RUN chmod g+s /usr/local/mailman
 RUN chmod 02775 /usr/local/mailman
 RUN cd mailman-2.1.29 && ./configure && make install
 RUN cd .. && rm -r mailman-2.1.29 mailman-2.1.29.tgz
-
-# Postfix
-RUN apk add postfix
-COPY postfix/master.cf /etc/postfix/master.cf
-COPY postfix/main.cf /etc/postfix/main.cf
-
-# Supervisor
-RUN apk add supervisor
-RUN mkdir -p /data/supervisord/
-COPY supervisord/supervisord.conf /etc/supervisord.conf
 
 # Entrypoint
 ENTRYPOINT ["supervisord", "-c", "/etc/supervisord.conf"]
