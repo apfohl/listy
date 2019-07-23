@@ -8,7 +8,7 @@ RUN apk update
 RUN apk add vim
 
 # General
-RUN mkdir -p /data/logs
+RUN mkdir -p /data/logs /init
 
 # Supervisor
 RUN apk add supervisor
@@ -29,6 +29,7 @@ COPY postsrsd/supervisord.conf /etc/supervisord.d/postsrsd.conf
 
 # Postfix
 RUN apk add postfix
+RUN postalias /etc/postfix/aliases
 COPY postfix/master.cf /etc/postfix/master.cf
 COPY postfix/main.cf /etc/postfix/main.cf
 COPY postfix/supervisord.conf /etc/supervisord.d/postfix.conf
@@ -47,6 +48,7 @@ RUN cd mailman-$MAILMAN_VERSION && ./configure --with-var-prefix=/data/mailman &
 RUN rm -r mailman-$MAILMAN_VERSION mailman-$MAILMAN_VERSION.tgz
 COPY mailman/mm_cfg.py /usr/local/mailman/Mailman/mm_cfg.py
 COPY mailman/nginx.conf /etc/nginx/conf.d/mailman.conf
+RUN mv /data/mailman /init
 
 # FCGI Wrap
 RUN apk add fcgiwrap

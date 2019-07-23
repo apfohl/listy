@@ -29,5 +29,5 @@ recipient_canonical_maps = tcp:127.0.0.1:10002
 recipient_canonical_classes = envelope_recipient, header_recipient
 
 # aliases
-alias_maps = hash:/etc/postfix/aliases, hash:/usr/local/mailman/data/aliases
+alias_maps = hash:/etc/postfix/aliases, hash:/data/mailman/data/aliases
 alias_database = hash:/etc/postfix/aliases
