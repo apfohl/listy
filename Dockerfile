@@ -45,6 +45,7 @@ RUN chown root:mailman /usr/local/mailman /data/mailman
 RUN chmod g+s /usr/local/mailman /data/mailman
 RUN chmod 02775 /usr/local/mailman /data/mailman
 RUN cd mailman-$MAILMAN_VERSION && ./configure --with-var-prefix=/data/mailman && make install
+RUN /usr/local/mailman/bin/check_perms -f
 RUN rm -r mailman-$MAILMAN_VERSION mailman-$MAILMAN_VERSION.tgz
 COPY mailman/mm_cfg.py /usr/local/mailman/Mailman/mm_cfg.py
 COPY mailman/nginx.conf /etc/nginx/conf.d/mailman.conf

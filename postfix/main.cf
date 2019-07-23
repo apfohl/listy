@@ -31,3 +31,6 @@ recipient_canonical_classes = envelope_recipient, header_recipient
 # aliases
 alias_maps = hash:/etc/postfix/aliases, hash:/data/mailman/data/aliases
 alias_database = hash:/etc/postfix/aliases
+
+# virtual
+virtual_alias_maps = hash:/data/mailman/data/virtual-mailman
