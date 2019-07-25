@@ -49,6 +49,8 @@ RUN /usr/local/mailman/bin/check_perms -f
 RUN rm -r mailman-$MAILMAN_VERSION mailman-$MAILMAN_VERSION.tgz
 COPY mailman/mm_cfg.py /usr/local/mailman/Mailman/mm_cfg.py
 COPY mailman/nginx.conf /etc/nginx/conf.d/mailman.conf
+COPY mailman/mailman.sh /usr/local/bin/mailman.sh
+COPY mailman/supervisord.conf /etc/supervisord.d/mailman.conf
 RUN mv /data/mailman /init
 
 # FCGI Wrap
