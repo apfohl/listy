@@ -3,20 +3,44 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+#include <libgen.h>
 
-struct configuration
-{
+struct configuration {
     char *command;
     char *pid_file;
 };
 
-struct configuration *parse_commandline(int argc, char **argv) {
+struct state {
+    struct configuration *configuration;
+    pid_t pid;
+} state;
+
+void cleanup_state()
+{
+    if (state.configuration) {
+        if (state.configuration->command) {
+            free(state.configuration->command);
+        }
+
+        if (state.configuration->pid_file) {
+            free(state.configuration->pid_file);
+        }
+
+        free(state.configuration);
+        state.configuration = NULL;
+    }
+}
+
+struct configuration *parse_commandline(int argc, char **argv)
+{
     struct configuration *configuration =
         calloc(1, sizeof(struct configuration));
+    if (!configuration) {
+        goto error;
+    }
 
     for (int ch = 0; ch != -1; ch = getopt(argc, argv, "c:p:")) {
-        switch (ch)
-        {
+        switch (ch) {
             case 'c':
                 configuration->command = strdup(optarg);
                 break;
@@ -41,7 +65,7 @@ struct configuration *parse_commandline(int argc, char **argv) {
 
     goto success;
 
-    error:
+error:
     if (configuration->command) {
         free(configuration->command);
     }
@@ -53,46 +77,121 @@ struct configuration *parse_commandline(int argc, char **argv) {
     free(configuration);
     configuration = NULL;
 
-    success:
+success:
     return configuration;
 }
 
-void signal_handler(int signum) {
-	if (SIGKILL == signum || SIGTERM == signum) {
-		exit(0);
-	}
+void signal_handler(int signum)
+{
+    if (kill(state.pid, signum) == -1) {
+        perror("kill");
+    }
+
+    if (SIGINT == signum || SIGTERM == signum) {
+        cleanup_state();
+        exit(EXIT_SUCCESS);
+    }
 }
 
-int register_signals() {
+int register_signals()
+{
     struct sigaction sa;
-	sa.sa_handler = signal_handler;
+    sa.sa_handler = signal_handler;
 
-	for (int i = 1; i <= 31; i++) {
-        if (SIGKILL == i || SIGSTOP == i) continue;
+    for (int i = 1; i <= 31; i++) {
+        if (SIGKILL == i || SIGSTOP == i) {
+            continue;
+        }
 
-		if (sigaction(i, &sa, NULL) == -1) {
+        if (sigaction(i, &sa, NULL) == -1) {
             perror("sigaction");
             return -1;
         }
-	}
+    }
 
     return 0;
 }
 
-int main(int argc, char **argv) {
-    struct configuration *configuration = parse_commandline(argc, argv);
-    if (!configuration) {
-        return EXIT_FAILURE;
+pid_t start_process(const char *command)
+{
+    pid_t pid = fork();
+
+    if (pid == -1) {
+        perror("fork");
+        return -1;
     }
 
-	if (register_signals() == -1) {
-        free(configuration);
-        return EXIT_FAILURE;
+    if (pid != 0) {
+        return pid;
     }
 
-	while(1) {
-		sleep(1);
-	}
+    char command_copy[1024];
 
-	return EXIT_SUCCESS;
+    strcpy(command_copy, command);
+    char *dir = dirname(command_copy);
+    strcpy(command_copy, command);
+    char *base = basename(command_copy);
+
+    cleanup_state();
+
+    if (execl(dir, base, NULL) == -1) {
+        perror("execl");
+        exit(EXIT_FAILURE);
+    }
+
+    return 0;
+}
+
+int read_pid_file(const char *pid_file)
+{
+    FILE *fp = fopen(pid_file, "r");
+    if (!fp) {
+        perror("fopen");
+        return -1;
+    }
+
+    int buffer_size = 6;
+    char buffer[buffer_size];
+    if (!fgets(buffer, buffer_size, fp)) {
+        (void) fclose(fp);
+        return -2;
+    }
+
+    (void) fclose(fp);
+
+    return atoi(buffer);
+}
+
+int main(int argc, char **argv)
+{
+    state.configuration = parse_commandline(argc, argv);
+    if (!state.configuration) {
+        goto error;
+    }
+
+    if (register_signals() == -1) {
+        goto error;
+    }
+
+    if (start_process(state.configuration->command) == -1) {
+        goto error;
+    }
+
+    state.pid = read_pid_file(state.configuration->pid_file);
+    if (state.pid < 0) {
+        goto error;
+    }
+
+    while (1) {
+        sleep(1);
+    }
+
+    goto success;
+
+error:
+    cleanup_state();
+    return EXIT_FAILURE;
+
+success:
+    return EXIT_SUCCESS;
 }
