@@ -83,6 +83,10 @@ success:
 
 void signal_handler(int signum)
 {
+    if (SIGCHLD == signum) {
+        return;
+    }
+
     if (kill(state.pid, signum) == -1) {
         perror("kill");
     }
@@ -99,7 +103,7 @@ int register_signals()
     sa.sa_handler = signal_handler;
 
     for (int i = 1; i <= 31; i++) {
-        if (SIGKILL == i || SIGSTOP == i) {
+        if (SIGKILL == i || SIGSTOP == i || SIGCHLD == i) {
             continue;
         }
 
@@ -134,12 +138,14 @@ pid_t start_process(const char *command)
 
     cleanup_state();
 
-    if (execl(dir, base, NULL) == -1) {
+    char exec_command[2048];
+    sprintf(exec_command, "%s/%s", dir, base);
+    if (execl(exec_command, base, NULL) == -1) {
         perror("execl");
         exit(EXIT_FAILURE);
     }
 
-    return 0;
+    exit(EXIT_SUCCESS);
 }
 
 int read_pid_file(const char *pid_file)
@@ -169,22 +175,27 @@ int main(int argc, char **argv)
         goto error;
     }
 
-    if (register_signals() == -1) {
-        goto error;
-    }
-
     if (start_process(state.configuration->command) == -1) {
         goto error;
     }
 
-    state.pid = read_pid_file(state.configuration->pid_file);
-    if (state.pid < 0) {
+    if (register_signals() == -1) {
         goto error;
     }
 
-    while (1) {
+    sleep(2);
+
+    state.pid = read_pid_file(state.configuration->pid_file);
+    if (state.pid <= 0) {
+        goto error;
+    }
+
+    while (access(state.configuration->pid_file, F_OK) == 0 &&
+            kill(state.pid, 0) == 0) {
         sleep(1);
     }
+
+    cleanup_state();
 
     goto success;
 
