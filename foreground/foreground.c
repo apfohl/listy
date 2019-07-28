@@ -5,48 +5,22 @@
 #include <string.h>
 #include <libgen.h>
 
-struct configuration {
-    char *command;
-    char *pid_file;
-};
-
 struct state {
-    struct configuration *configuration;
+    char command[2048];
+    char pid_file[2048];
     pid_t pid;
 } state;
 
-void cleanup_state()
+int parse_commandline(int argc, char **argv)
 {
-    if (state.configuration) {
-        if (state.configuration->command) {
-            free(state.configuration->command);
-        }
-
-        if (state.configuration->pid_file) {
-            free(state.configuration->pid_file);
-        }
-
-        free(state.configuration);
-        state.configuration = NULL;
-    }
-}
-
-struct configuration *parse_commandline(int argc, char **argv)
-{
-    struct configuration *configuration =
-        calloc(1, sizeof(struct configuration));
-    if (!configuration) {
-        goto error;
-    }
-
     for (int ch = 0; ch != -1; ch = getopt(argc, argv, "c:p:")) {
         switch (ch) {
             case 'c':
-                configuration->command = strdup(optarg);
+                (void) strcpy(state.command, optarg);
                 break;
 
             case 'p':
-                configuration->pid_file = strdup(optarg);
+                (void) strcpy(state.pid_file, optarg);
                 break;
 
             case ':':
@@ -58,27 +32,15 @@ struct configuration *parse_commandline(int argc, char **argv)
         }
     }
 
-    if (configuration->command == NULL || configuration->pid_file == NULL) {
+    if (strlen(state.command) == 0 || strlen(state.pid_file) == 0) {
         (void) fprintf(stderr, "The options -c and -p need to be specified.\n");
         goto error;
     }
 
-    goto success;
+    return 0;
 
 error:
-    if (configuration->command) {
-        free(configuration->command);
-    }
-
-    if (configuration->pid_file) {
-        free(configuration->pid_file);
-    }
-
-    free(configuration);
-    configuration = NULL;
-
-success:
-    return configuration;
+    return -1;
 }
 
 void signal_handler(int signum)
@@ -92,7 +54,6 @@ void signal_handler(int signum)
     }
 
     if (SIGINT == signum || SIGTERM == signum) {
-        cleanup_state();
         exit(EXIT_SUCCESS);
     }
 }
@@ -119,7 +80,6 @@ int register_signals()
 pid_t start_process(const char *command)
 {
     pid_t pid = fork();
-
     if (pid == -1) {
         perror("fork");
         return -1;
@@ -129,23 +89,7 @@ pid_t start_process(const char *command)
         return pid;
     }
 
-    char command_copy[1024];
-
-    strcpy(command_copy, command);
-    char *dir = dirname(command_copy);
-    strcpy(command_copy, command);
-    char *base = basename(command_copy);
-
-    cleanup_state();
-
-    char exec_command[2048];
-    sprintf(exec_command, "%s/%s", dir, base);
-    if (execl(exec_command, base, NULL) == -1) {
-        perror("execl");
-        exit(EXIT_FAILURE);
-    }
-
-    exit(EXIT_SUCCESS);
+    exit(system(command));
 }
 
 int read_pid_file(const char *pid_file)
@@ -170,12 +114,14 @@ int read_pid_file(const char *pid_file)
 
 int main(int argc, char **argv)
 {
-    state.configuration = parse_commandline(argc, argv);
-    if (!state.configuration) {
+    state.command[0] = '\0';
+    state.pid_file[0] = '\0';
+
+    if (parse_commandline(argc, argv) == -1) {
         goto error;
     }
 
-    if (start_process(state.configuration->command) == -1) {
+    if (start_process(state.command) == -1) {
         goto error;
     }
 
@@ -185,24 +131,18 @@ int main(int argc, char **argv)
 
     sleep(2);
 
-    state.pid = read_pid_file(state.configuration->pid_file);
+    state.pid = read_pid_file(state.pid_file);
     if (state.pid <= 0) {
         goto error;
     }
 
-    while (access(state.configuration->pid_file, F_OK) == 0 &&
+    while (access(state.pid_file, F_OK) == 0 &&
             kill(state.pid, 0) == 0) {
         sleep(1);
     }
 
-    cleanup_state();
-
-    goto success;
+    return EXIT_SUCCESS;
 
 error:
-    cleanup_state();
     return EXIT_FAILURE;
-
-success:
-    return EXIT_SUCCESS;
 }
