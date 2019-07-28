@@ -12,6 +12,9 @@ if [ ! -f "$INIT_TOKEN" ]; then
     echo "... DONE."
 fi
 
+# Fix Mailman file permissions
+/usr/local/mailman/bin/check_perms -f
+
 # Remove stale FCGI Wrap socket
 if [ -S "/var/run/fcgiwrap.sock" ]; then
     rm -f /var/run/fcgiwrap.sock

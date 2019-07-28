@@ -1,6 +1,6 @@
 BIN = foreground
 
-CFLAGS = -Os -std=c11 -Wall
+CFLAGS = -Os -std=gnu11 -Wall
 
 .PHONY: all clean
 

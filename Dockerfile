@@ -34,8 +34,15 @@ COPY postfix/master.cf /etc/postfix/master.cf
 COPY postfix/main.cf /etc/postfix/main.cf
 COPY postfix/supervisord.conf /etc/supervisord.d/postfix.conf
 
+# Foreground
+RUN apk add alpine-sdk
+COPY foreground /foreground
+RUN make -C foreground
+RUN mv /foreground/foreground /usr/local/bin/foreground
+RUN rm -r /foreground
+
 # Mailman
-RUN apk add python2 python2-dev py2-pip alpine-sdk
+RUN apk add python2 python2-dev py2-pip
 RUN addgroup -S mailman && adduser -S mailman -G mailman
 RUN pip install dnspython
 ADD https://launchpad.net/mailman/$MAILMAN_MINOR_VERSION/$MAILMAN_VERSION/+download/mailman-$MAILMAN_VERSION.tgz /
@@ -49,7 +56,6 @@ RUN /usr/local/mailman/bin/check_perms -f
 RUN rm -r mailman-$MAILMAN_VERSION mailman-$MAILMAN_VERSION.tgz
 COPY mailman/mm_cfg.py /usr/local/mailman/Mailman/mm_cfg.py
 COPY mailman/nginx.conf /etc/nginx/conf.d/mailman.conf
-COPY mailman/mailman.sh /usr/local/bin/mailman.sh
 COPY mailman/supervisord.conf /etc/supervisord.d/mailman.conf
 RUN mv /data/mailman /init
 

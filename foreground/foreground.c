@@ -54,7 +54,7 @@ void signal_handler(int signum)
     }
 
     if (SIGINT == signum || SIGTERM == signum) {
-        exit(EXIT_SUCCESS);
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
         goto error;
     }
 
-    sleep(2);
+    sleep(5);
 
     state.pid = read_pid_file(state.pid_file);
     if (state.pid <= 0) {
@@ -140,8 +140,6 @@ int main(int argc, char **argv)
             kill(state.pid, 0) == 0) {
         sleep(1);
     }
-
-    return EXIT_SUCCESS;
 
 error:
     return EXIT_FAILURE;
