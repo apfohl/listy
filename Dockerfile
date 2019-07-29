@@ -16,9 +16,10 @@ RUN mkdir -p /etc/supervisord.d
 COPY supervisord/supervisord.conf /etc/supervisord.conf
 
 # NGINX
+RUN addgroup -S www-data && adduser -S www-data -G www-data
 RUN apk add nginx
+RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
-COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY nginx/supervisord.conf /etc/supervisord.d/nginx.conf
 
 # PostSRSd
@@ -60,7 +61,7 @@ COPY mailman/supervisord.conf /etc/supervisord.d/mailman.conf
 RUN mv /data/mailman /init
 
 # FCGI Wrap
-RUN apk add fcgiwrap
+RUN apk add spawn-fcgi fcgiwrap
 COPY fcgiwrap/supervisord.conf /etc/supervisord.d/fcgiwrap.conf
 
 # Network
