@@ -1,7 +1,7 @@
 # general
 biff = no
 append_dot_mydomain = no
-mydomain = pfohl.space
+mydomain = pfohl.email
 mailbox_size_limit = 0
 recipient_delimiter = +
 message_size_limit = 40960000
