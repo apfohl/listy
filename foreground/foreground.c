@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <string.h>
 #include <libgen.h>
+#include <sys/wait.h>
 
 struct state {
     char command[2048];
@@ -46,6 +47,7 @@ error:
 void signal_handler(int signum)
 {
     if (SIGCHLD == signum) {
+        (void) wait(NULL);
         return;
     }
 
@@ -64,7 +66,7 @@ int register_signals()
     sa.sa_handler = signal_handler;
 
     for (int i = 1; i <= 31; i++) {
-        if (SIGKILL == i || SIGSTOP == i || SIGCHLD == i) {
+        if (SIGKILL == i || SIGSTOP == i) {
             continue;
         }
 
