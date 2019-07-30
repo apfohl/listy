@@ -8,10 +8,6 @@ message_size_limit = 40960000
 compatibility_level = 2
 readme_directory = no
 
-# logging
-maillog_file_prefixes = /data, /var, /dev/stdout
-maillog_file = /data/logs/postfix.log
-
 # network
 inet_interfaces = all
 inet_protocols = all
