@@ -62,10 +62,10 @@ IMAGE_LOGOS         = '/images/mailman/'
 
 #-------------------------------------------------------------
 # Default domain for email addresses of newly created MLs
-DEFAULT_EMAIL_HOST = 'lists.pfohl.email'
+DEFAULT_EMAIL_HOST = 'lists.example.com'
 #-------------------------------------------------------------
 # Default host for web interface of newly created MLs
-DEFAULT_URL_HOST   = 'lists.pfohl.email'
+DEFAULT_URL_HOST   = 'lists.example.com'
 #-------------------------------------------------------------
 # Required when setting any of its arguments.
 add_virtualhost(DEFAULT_URL_HOST, DEFAULT_EMAIL_HOST)
@@ -104,4 +104,4 @@ MTA='Postfix'
 # Note - if you're looking for something that is imported from mm_cfg, but you
 # didn't find it above, it's probably in /usr/lib/mailman/Mailman/Defaults.py.
 
-POSTFIX_STYLE_VIRTUAL_DOMAINS = ['lists.pfohl.email']
+POSTFIX_STYLE_VIRTUAL_DOMAINS = ['lists.example.com']
