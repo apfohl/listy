@@ -15,6 +15,11 @@ RUN apk add supervisor
 RUN mkdir -p /etc/supervisord.d
 COPY supervisord/supervisord.conf /etc/supervisord.conf
 
+# Rsyslogd
+RUN apk add rsyslog
+COPY rsyslogd/rsyslog.conf /etc/rsyslog.conf
+COPY rsyslogd/supervisord.conf /etc/supervisord.d/rsyslogd.conf
+
 # NGINX
 RUN addgroup -S www-data && adduser -S www-data -G www-data
 RUN apk add nginx
