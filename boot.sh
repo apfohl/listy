@@ -10,8 +10,10 @@ if [ ! -f "$INIT_TOKEN" ]; then
     HOSTNAME=`hostname -f`
     DOMAIN=`hostname -d`
 
-    sed -i "s/lists.example.com/$HOSTNAME/g" /usr/local/mailman/Mailman/mm_cfg.py
-    sed -i "s/lists.example.com/$HOSTNAME/g" /etc/supervisord.d/postsrsd.conf
+    LISTY_DOMAIN="${LISTY_DOMAIN:-$HOSTNAME}"
+
+    sed -i "s/lists.example.com/$LISTY_DOMAIN/g" /usr/local/mailman/Mailman/mm_cfg.py
+    sed -i "s/lists.example.com/$LISTY_DOMAIN/g" /etc/supervisord.d/postsrsd.conf
     sed -i "s/example.com/$DOMAIN/g" /etc/supervisord.d/postsrsd.conf
 
     touch $INIT_TOKEN
