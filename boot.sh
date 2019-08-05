@@ -35,6 +35,10 @@ if [ -f "/var/run/rsyslogd.pid" ]; then
     rm -f /var/run/rsyslogd.pid
 fi
 
+if [ -f "/data/mailman/data/master-qrunner.pid" ]; then
+    rm -f /data/mailman/data/master-qrunner.pid
+fi
+
 rm -f /data/mailman/locks/*
 
 # Start services
