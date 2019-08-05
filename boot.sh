@@ -16,6 +16,8 @@ if [ ! -f "$INIT_TOKEN" ]; then
     sed -i "s/lists.example.com/$LISTY_DOMAIN/g" /etc/supervisord.d/postsrsd.conf
     sed -i "s/example.com/$DOMAIN/g" /etc/supervisord.d/postsrsd.conf
 
+    postconf -e "mydestination = \$myhostname, localhost.\$mydomain, localhost, $LISTY_DOMAIN"
+
     touch $INIT_TOKEN
 
     echo "... DONE."
