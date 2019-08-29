@@ -8,6 +8,7 @@ RUN apk update
 RUN apk add vim
 
 # General
+RUN mv /etc/profile.d/color_prompt /etc/profile.d/color_prompt.sh
 RUN mkdir -p /data/logs /init
 
 # Supervisor
@@ -63,6 +64,7 @@ RUN rm -r mailman-$MAILMAN_VERSION mailman-$MAILMAN_VERSION.tgz
 COPY mailman/mm_cfg.py /usr/local/mailman/Mailman/mm_cfg.py
 COPY mailman/nginx.conf /etc/nginx/conf.d/mailman.conf
 COPY mailman/supervisord.conf /etc/supervisord.d/mailman.conf
+COPY mailman/path.sh /etc/profile.d/path.sh
 RUN mv /data/mailman /init
 
 # FCGI Wrap
@@ -71,6 +73,9 @@ COPY fcgiwrap/supervisord.conf /etc/supervisord.d/fcgiwrap.conf
 
 # Network
 EXPOSE 25/tcp 80/tcp
+
+# Environment
+ENV ENV /etc/profile
 
 # Entrypoint
 COPY boot.sh /boot.sh
