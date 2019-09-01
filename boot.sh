@@ -13,8 +13,6 @@ if [ ! -f "$INIT_TOKEN" ]; then
     LISTY_DOMAIN="${LISTY_DOMAIN:-$HOSTNAME}"
 
     sed -i "s/lists.example.com/$LISTY_DOMAIN/g" /usr/local/mailman/Mailman/mm_cfg.py
-    sed -i "s/lists.example.com/$LISTY_DOMAIN/g" /etc/supervisord.d/postsrsd.conf
-    sed -i "s/example.com/$DOMAIN/g" /etc/supervisord.d/postsrsd.conf
 
     postconf -e "mydestination = \$myhostname, localhost.\$mydomain, localhost, $LISTY_DOMAIN"
 

@@ -28,12 +28,6 @@ RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY nginx/supervisord.conf /etc/supervisord.d/nginx.conf
 
-# PostSRSd
-RUN apk add postsrsd
-RUN mkdir -p /var/lib/postsrsd
-RUN dd if=/dev/urandom bs=18 count=1 | base64 > /etc/postsrsd.secret
-COPY postsrsd/supervisord.conf /etc/supervisord.d/postsrsd.conf
-
 # Postfix
 RUN apk add postfix
 RUN postalias /etc/postfix/aliases

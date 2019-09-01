@@ -13,12 +13,6 @@ mydestination = $myhostname, localhost.$mydomain, localhost
 smtpd_banner = $myhostname ESMTP
 smtpd_relay_restrictions = permit_mynetworks, reject_unauth_destination
 
-# sender rewriting scheme
-sender_canonical_maps = tcp:127.0.0.1:10001
-sender_canonical_classes = envelope_sender
-recipient_canonical_maps = tcp:127.0.0.1:10002
-recipient_canonical_classes = envelope_recipient, header_recipient
-
 # alias
 alias_maps = hash:/etc/postfix/aliases, hash:/data/mailman/data/aliases
 
