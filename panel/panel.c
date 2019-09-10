@@ -35,67 +35,121 @@ char *read_file(const char *path) {
     return result;
 }
 
-static void PrintEnv(FCGX_Stream *out, char *label, char **envp)
+/*static void PrintEnv(FCGX_Stream *out, char *label, char **envp)
 {
-    FCGX_FPrintF(out, "%s:<br>\n<pre>\n", label);
-    for( ; *envp != NULL; envp++) {
+    FCGX_FPrintF(out, "<p>%s:</p>\n<pre>\n", label);
+    for(; *envp != NULL; envp++) {
         FCGX_FPrintF(out, "%s\n", *envp);
     }
-    FCGX_FPrintF(out, "</pre><p>\n");
+    FCGX_FPrintF(out, "</pre>\n");
+}*/
+
+static void print_row(FCGX_Stream *out, struct jzon *jzon) {
+    const char *queue_id = jzon_object_get(jzon, "queue_id", NULL)->string;
+    const char *queue_name = jzon_object_get(jzon, "queue_name", NULL)->string;
+    const int message_size =
+        (int) jzon_object_get(jzon, "message_size", NULL)->number;
+    const int arrival_time =
+        (int) jzon_object_get(jzon, "arrival_time", NULL)->number;
+    const char *sender = jzon_object_get(jzon, "sender", NULL)->string;
+    const struct jzon_array *recipients =
+        jzon_object_get(jzon, "recipients", NULL)->array;
+
+    FCGX_FPrintF(out,
+        "<tr><td>%s</td><td>%s</td><td>%d</td><td>%d</td><td>%s</td></tr>\n",
+        queue_id, queue_name, message_size, arrival_time, sender);
+
+    FCGX_FPrintF(out, "<tr><td colspan=\"5\"><ul>");
+
+    for (int i = 0; i < recipients->capacity; i++) {
+        struct jzon *recipient = recipients->elements[i];
+
+        FCGX_FPrintF(out, "<li><strong>%s</strong> (%s)</li>",
+            jzon_object_get(recipient, "address", NULL)->string,
+            jzon_object_get(recipient, "delay_reason", NULL)->string);
+    }
+
+    FCGX_FPrintF(out, "</ul></td></tr>\n");
 }
 
 int main(int argc, char **argv)
 {
-    char *json = read_file("queue.json");
-    struct jzon *jzon = jzon_parse(json, NULL);
-    free(json);
-
     FCGX_Stream *in, *out, *err;
     FCGX_ParamArray envp;
     int count = 0;
 
+    const char *title = "Postfix Mail Queue";
+
     while(FCGX_Accept(&in, &out, &err, &envp) >= 0) {
-        char *content_length = FCGX_GetParam("CONTENT_LENGTH", envp);
-        int len = 0;
+        char *json = read_file("queue.json");
+        struct jzon *jzon = jzon_parse(json, NULL);
+        free(json);
+
+        // char *content_length = FCGX_GetParam("CONTENT_LENGTH", envp);
+        // int len = 0;
+
+        FCGX_FPrintF(out, "Content-type: text/html\nStatus: 200\r\n\r\n");
 
         FCGX_FPrintF(out,
-           "Content-type: text/html\r\n"
-           "\r\n"
-           "<title>FastCGI echo (fcgiapp version)</title>"
-           "<h1>FastCGI echo (fcgiapp version)</h1>\n"
-           "Request number %d,  Process ID: %d<p>\n", ++count, getpid());
+           "<!doctype html>\n"
+           "<html lang=\"en\">\n"
+           "<head>\n"
+           "<meta charset=\"utf-8\">"
+           "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\">\n"
+           "<link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\">\n"
+           "<title>%s</title>\n"
+           "</head>\n"
+           "<body>\n"
+           "<div class=\"container-fluid\">\n"
+           "<h1>%s</h1>\n"
+           "<p>Request number %d,  Process ID: %d</p>\n",
+           title,
+           title,
+           ++count,
+           getpid());
 
         FCGX_FPrintF(out,
-        "<table><tr>"
-        "<td>%s</td><td>%s</td><td>%d</td><td>%d</td>"
-        "</tr></table>\n",
-        jzon_object_get(jzon, "queue_name", NULL)->string,
-        jzon_object_get(jzon, "queue_id", NULL)->string,
-        (int) jzon_object_get(jzon, "arrival_time", NULL)->number,
-        (int) jzon_object_get(jzon, "message_size", NULL)->number);
+        "<p>\n"
+        "<table class=\"table table-sm\">\n"
+        "<thead><tr><th scope=\"col\">Queue ID</th><th scope=\"col\">Status</th><th scope=\"col\">Size</th><th scope=\"col\">Arrival Time</th><th scope=\"col\">Sender</th></tr></thead>\n"
+        "<tbody>\n");
 
-        if (content_length != NULL)
+        print_row(out, jzon);
+
+        FCGX_FPrintF(out,
+        "</tbody>\n"
+        "</table>\n"
+        "</p>\n");
+
+        /*if (content_length != NULL)
             len = strtol(content_length, NULL, 10);
 
         if (len <= 0) {
-            FCGX_FPrintF(out, "No data from standard input.<p>\n");
+            FCGX_FPrintF(out, "<p>No data from standard input.</p>\n");
         } else {
             int i, ch;
 
-            FCGX_FPrintF(out, "Standard input:<br>\n<pre>\n");
+            FCGX_FPrintF(out, "<p>Standard input:</p>\n<pre>\n");
             for (i = 0; i < len; i++) {
                 if ((ch = FCGX_GetChar(in)) < 0) {
                     FCGX_FPrintF(out,
-                        "Error: Not enough bytes received on standard input<p>\n");
+                        "Error: Not enough bytes received on standard input.\n");
                     break;
                 }
                 FCGX_PutChar(ch, out);
             }
-            FCGX_FPrintF(out, "\n</pre><p>\n");
+            FCGX_FPrintF(out, "\n</pre>\n");
         }
 
         PrintEnv(out, "Request environment", envp);
-        PrintEnv(out, "Initial environment", environ);
+        PrintEnv(out, "Initial environment", environ);*/
+
+        FCGX_FPrintF(out,
+            "</div>\n"
+            "</body>\n"
+            "</html>\n");
+
+        jzon_free(jzon);
     }
 
     return EXIT_SUCCESS;

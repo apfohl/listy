@@ -1,0 +1,13 @@
+-Queue ID-  --Size-- ----Arrival Time---- -Sender/Recipient-------
+478B79CA39     2626 Sun Sep  8 12:21:37  paddeln-bounces@lists.pfohl.space
+(host mx02.t-online.de[194.25.134.9] refused to talk to me: 554 IP=195.201.149.189 - A problem occurred. (Ask your postmaster for help or to contact tosa@rx.t-online.de to clarify.) (BL))
+                                         UtaCzeslik@t-online.de
+
+019D39CA09     3655 Sun Sep  8 12:18:36  familie-pfohl-bounces@lists.pfohl.space
+(host mx03.t-online.de[194.25.134.73] refused to talk to me: 554 IP=195.201.149.189 - A problem occurred. (Ask your postmaster for help or to contact tosa@rx.t-online.de to clarify.) (BL))
+                                         utepfohl@t-online.de
+
+-- 6 Kbytes in 2 Requests.
+
+{"queue_name": "deferred", "queue_id": "478B79CA39", "arrival_time": 1567938097, "message_size": 2626, "sender": "paddeln-bounces@lists.pfohl.space", "recipients": [{"address": "UtaCzeslik@t-online.de", "delay_reason": "host mx02.t-online.de[194.25.134.9] refused to talk to me: 554 IP=195.201.149.189 - A problem occurred. (Ask your postmaster for help or to contact tosa@rx.t-online.de to clarify.) (BL)"}]}
+{"queue_name": "deferred", "queue_id": "019D39CA09", "arrival_time": 1567937916, "message_size": 3655, "sender": "familie-pfohl-bounces@lists.pfohl.space", "recipients": [{"address": "utepfohl@t-online.de", "delay_reason": "host mx03.t-online.de[194.25.134.73] refused to talk to me: 554 IP=195.201.149.189 - A problem occurred. (Ask your postmaster for help or to contact tosa@rx.t-online.de to clarify.) (BL)"}]}

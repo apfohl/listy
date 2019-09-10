@@ -10,5 +10,5 @@ all: $(BIN)
 clean:
 	rm -f $(BIN)
 
-server:
+server: $(BIN)
 	@lighttpd -Df ./lighttpd.conf
