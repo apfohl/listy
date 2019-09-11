@@ -1,7 +1,7 @@
 BIN = panel
 
 CFLAGS = -Os -std=gnu11 -Wall
-LDLIBS = -lfcgi -ljzon
+LDLIBS = -lfcgi -ljzon -lctemplate
 
 .PHONY: all clean server
 

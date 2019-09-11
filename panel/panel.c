@@ -6,6 +6,7 @@
 #include <fcgi_config.h>
 #include <fcgiapp.h>
 #include <jzon.h>
+#include <ctemplate.h>
 
 const int CHUNK = 1024;
 
@@ -72,6 +73,26 @@ static void print_row(FCGX_Stream *out, struct jzon *jzon) {
     FCGX_FPrintF(out, "</ul></td></tr>\n");
 }
 
+static size_t render_template(FCGX_Stream *out, const char *path,
+    TMPL_varlist *varlist) {
+
+    char *template = NULL;
+    size_t template_size = 0;
+
+    FILE *template_stream = open_memstream(&template, &template_size);
+
+    TMPL_write(path, NULL, NULL, varlist, template_stream, NULL);
+
+    fflush(template_stream);
+    fclose(template_stream);
+
+    FCGX_FPrintF(out, template);
+
+    free(template);
+
+    return template_size;
+}
+
 int main(int argc, char **argv)
 {
     FCGX_Stream *in, *out, *err;
@@ -90,36 +111,25 @@ int main(int argc, char **argv)
 
         FCGX_FPrintF(out, "Content-type: text/html\nStatus: 200\r\n\r\n");
 
-        FCGX_FPrintF(out,
-           "<!doctype html>\n"
-           "<html lang=\"en\">\n"
-           "<head>\n"
-           "<meta charset=\"utf-8\">"
-           "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\">\n"
-           "<link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\">\n"
-           "<title>%s</title>\n"
-           "</head>\n"
-           "<body>\n"
-           "<div class=\"container-fluid\">\n"
-           "<h1>%s</h1>\n"
-           "<p>Request number %d,  Process ID: %d</p>\n",
-           title,
-           title,
-           ++count,
-           getpid());
+        TMPL_varlist *varlist = TMPL_add_var(0, "title", title, 0);
+        (void) render_template(out, "layout.tmpl", varlist);
+        TMPL_free_varlist(varlist);
+
+        FCGX_FPrintF(out, "<p>Request number %d,  Process ID: %d</p>\n",
+           ++count, getpid());
 
         FCGX_FPrintF(out,
-        "<p>\n"
-        "<table class=\"table table-sm\">\n"
-        "<thead><tr><th scope=\"col\">Queue ID</th><th scope=\"col\">Status</th><th scope=\"col\">Size</th><th scope=\"col\">Arrival Time</th><th scope=\"col\">Sender</th></tr></thead>\n"
-        "<tbody>\n");
+            "<p>\n"
+            "<table class=\"table table-sm\">\n"
+            "<thead><tr><th scope=\"col\">Queue ID</th><th scope=\"col\">Status</th><th scope=\"col\">Size</th><th scope=\"col\">Arrival Time</th><th scope=\"col\">Sender</th></tr></thead>\n"
+            "<tbody>\n");
 
         print_row(out, jzon);
 
         FCGX_FPrintF(out,
-        "</tbody>\n"
-        "</table>\n"
-        "</p>\n");
+            "</tbody>\n"
+            "</table>\n"
+            "</p>\n");
 
         /*if (content_length != NULL)
             len = strtol(content_length, NULL, 10);
