@@ -64,9 +64,7 @@ static char *render_template(const char *path, TMPL_varlist *varlist)
     return template;
 }
 
-static char *render_layout(const char *path,
-                           const char *title,
-                           const char *content)
+static char *render_layout(const char *path, const char *title, const char *content)
 {
 
     TMPL_varlist *varlist = TMPL_add_var(NULL, "title", title, "content", content, 0);
