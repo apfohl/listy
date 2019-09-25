@@ -1,17 +1,2 @@
-{
-    "queue_name": "deferred",
-    "queue_id": "019D39CA09",
-    "arrival_time": 1567937916,
-    "message_size": 3655,
-    "sender": "familie-pfohl-bounces@lists.pfohl.space",
-    "recipients": [
-        {
-            "address": "utepfohl@t-online.de",
-            "delay_reason": "host mx02.t-online.de[194.25.134.9] refused to talk to me: 554 IP=195.201.149.189 - A problem occurred. (Ask your postmaster for help or to contact tosa@rx.t-online.de to clarify.) (BL)"
-        },
-        {
-            "address": "UtaCzeslik@t-online.de",
-            "delay_reason": "host mx02.t-online.de[194.25.134.9] refused to talk to me: 554 IP=195.201.149.189 - A problem occurred. (Ask your postmaster for help or to contact tosa@rx.t-online.de to clarify.) (BL)"
-        }
-    ]
-}
+{"queue_name":"deferred","queue_id":"019D39CA09","arrival_time":1567937916,"message_size":3655,"sender":"familie-pfohl-bounces@lists.pfohl.space","recipients":[{"address":"utepfohl@t-online.de","delay_reason":"host mx02.t-online.de[194.25.134.9] refused to talk to me: 554 IP=195.201.149.189 - A problem occurred. (Ask your postmaster for help or to contact tosa@rx.t-online.de to clarify.) (BL)"},{"address":"UtaCzeslik@t-online.de","delay_reason":"host mx02.t-online.de[194.25.134.9] refused to talk to me: 554 IP=195.201.149.189 - A problem occurred. (Ask your postmaster for help or to contact tosa@rx.t-online.de to clarify.) (BL)"}]}
+{"queue_name":"deferred","queue_id":"019D39CA09","arrival_time":1567937916,"message_size":3655,"sender":"familie-pfohl-bounces@lists.pfohl.space","recipients":[{"address":"utepfohl@t-online.de","delay_reason":"host mx02.t-online.de[194.25.134.9] refused to talk to me: 554 IP=195.201.149.189 - A problem occurred. (Ask your postmaster for help or to contact tosa@rx.t-online.de to clarify.) (BL)"},{"address":"UtaCzeslik@t-online.de","delay_reason":"host mx02.t-online.de[194.25.134.9] refused to talk to me: 554 IP=195.201.149.189 - A problem occurred. (Ask your postmaster for help or to contact tosa@rx.t-online.de to clarify.) (BL)"}]}

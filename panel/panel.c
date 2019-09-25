@@ -12,40 +12,54 @@ const int CHUNK = 1024;
 
 extern char **environ;
 
-char *read_file(const char *path)
-{
-    char *result = NULL;
-    size_t result_size = 0;
-
-    FILE *file = fopen(path, "r");
-
-    char buffer[CHUNK];
-    size_t nread = 0;
-
-    while ((nread = fread(buffer, sizeof(char), CHUNK, file)) > 0)
-    {
-        result = realloc(result, (result_size + nread) * sizeof(char));
-        memcpy(result + result_size, buffer, nread);
-        result_size += nread;
-    }
-
-    fclose(file);
-
-    result = realloc(result, (result_size + 1) * sizeof(char));
-    result_size++;
-    result[result_size] = '\0';
-
-    return result;
-}
-
 static void PrintEnv(FCGX_Stream *out, char *label, char **envp)
 {
     FCGX_FPrintF(out, "<p>%s:</p>\n<pre>\n", label);
+
     for (; *envp != NULL; envp++)
     {
         FCGX_FPrintF(out, "%s\n", *envp);
     }
+
     FCGX_FPrintF(out, "</pre>\n");
+}
+
+void map_to_json_array(const char *line, size_t line_length, char **output) {
+    if (*output == NULL) {
+        *output = malloc(3 * sizeof(char));
+        strcpy(*output, "[]");
+    }
+
+    ssize_t output_length = strlen(*output);
+
+    size_t new_size =
+        1 + // [
+        (output_length - 2) + // existing data without brackets
+        (output_length > 2 ? 1 : 0) + // comma, if array is not empty
+        line_length + // new data
+        1 + // ]
+        1; // terminating null byte
+
+    *output = realloc(*output, new_size * sizeof(char));
+
+    sprintf(*output + 1 + output_length - 2, "%s%s]", output_length > 2 ? "," : "", line);
+}
+
+void read_lines(FILE *stream, void (*map)(const char *, size_t, char **), char **output)
+{
+    char *line = NULL;
+    size_t line_length = 0;
+
+    for (ssize_t nread = 0; nread != -1; nread = getline(&line, &line_length, stream))
+    {
+        if (nread == 0) {
+            continue;
+        }
+
+        map(line, line_length, output);
+    }
+
+    free(line);
 }
 
 static char *render_template(const char *path, TMPL_varlist *varlist)
@@ -141,9 +155,45 @@ int main(int argc, char **argv)
 
     const char *title = "Postfix Mail Queue";
 
+    if (FCGX_IsCGI())
+    {
+        FILE *stream = fopen("queue.json", "r");
+        if (stream == NULL) {
+            perror("fopen");
+            return EXIT_FAILURE;
+        }
+
+        char *json = NULL;
+        read_lines(stream, map_to_json_array, &json);
+
+        fprintf(stderr, "%s\n", json);
+
+        struct jzon *jzon = jzon_parse(json, NULL);
+
+        char *postqueue = render_postqueue(jzon);
+        free(postqueue);
+
+        jzon_free(jzon);
+
+        free(json);
+
+        fclose(stream);
+
+        return EXIT_SUCCESS;
+    }
+
     while (FCGX_Accept(&in, &out, &err, &envp) >= 0)
     {
-        char *json = read_file("queue.json");
+        FILE *stream = fopen("queue.json", "r");
+        if (stream == NULL) {
+            perror("fopen");
+            return EXIT_FAILURE;
+        }
+
+        char *json = NULL;
+        read_lines(stream, map_to_json_array, &json);
+        fclose(stream);
+
         struct jzon *jzon = jzon_parse(json, NULL);
         free(json);
 
