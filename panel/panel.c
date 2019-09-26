@@ -152,16 +152,16 @@ int main(int argc, char **argv)
 
     while (FCGX_Accept(&in, &out, &err, &envp) >= 0)
     {
-        FILE *stream = fopen("queue.json", "r");
+        FILE *stream = popen("cat queue.json", "r");
         if (stream == NULL)
         {
-            perror("fopen");
+            perror("popen");
             return EXIT_FAILURE;
         }
 
         char *json = NULL;
         read_lines(stream, map_to_json_array, (void **)&json);
-        fclose(stream);
+        pclose(stream);
 
         struct jzon *jzon = jzon_parse(json, NULL);
         free(json);
