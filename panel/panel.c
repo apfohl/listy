@@ -8,15 +8,17 @@
 #include <jzon.h>
 #include <ctemplate.h>
 
-void map_to_json_array(const char *line, size_t line_length, char **output)
+void map_to_json_array(const char *line, size_t line_length, void **output)
 {
-    if (*output == NULL)
+    char **result = (char **)output;
+
+    if (*result == NULL)
     {
-        *output = malloc(3 * sizeof(char));
-        strcpy(*output, "[]");
+        *result = malloc(3 * sizeof(char));
+        strcpy(*result, "[]");
     }
 
-    ssize_t output_length = strlen(*output);
+    ssize_t output_length = strlen(*result);
 
     size_t new_size =
         1 +                           // [
@@ -26,12 +28,12 @@ void map_to_json_array(const char *line, size_t line_length, char **output)
         1 +                           // ]
         1;                            // terminating null byte
 
-    *output = realloc(*output, new_size * sizeof(char));
+    *result = realloc(*result, new_size * sizeof(char));
 
-    sprintf(*output + 1 + output_length - 2, "%s%s]", output_length > 2 ? "," : "", line);
+    sprintf(*result + 1 + output_length - 2, "%s%s]", output_length > 2 ? "," : "", line);
 }
 
-void read_lines(FILE *stream, void (*map)(const char *, size_t, char **), char **output)
+void read_lines(FILE *stream, void (*map)(const char *, size_t, void **), void **output)
 {
     char *line = NULL;
     size_t line_length = 0;
@@ -158,7 +160,7 @@ int main(int argc, char **argv)
         }
 
         char *json = NULL;
-        read_lines(stream, map_to_json_array, &json);
+        read_lines(stream, map_to_json_array, (void **)&json);
         fclose(stream);
 
         struct jzon *jzon = jzon_parse(json, NULL);
