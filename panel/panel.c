@@ -2,11 +2,13 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <limits.h>
 
 #include <fcgi_config.h>
 #include <fcgiapp.h>
 #include <jzon.h>
 #include <ctemplate.h>
+#include <libconfig.h>
 
 void map_to_json_array(const char *line, size_t line_length, void **output)
 {
@@ -143,12 +145,33 @@ static char *render_postqueue(struct jzon *jzon)
     return postqueue;
 }
 
+char *get_path_of_config_file() {
+    const char *config_files[] = {
+        "/etc/panel.conf",
+        "/usr/local/etc/panel.conf",
+        "panel.conf"
+    };
+}
+
 int main(int argc, char **argv)
 {
     FCGX_Stream *in, *out, *err;
     FCGX_ParamArray envp;
+    config_t config;
 
     const char *title = "Postfix Mail Queue";
+
+    if (FCGX_IsCGI()) {
+        config_init(&config);
+
+        char path[PATH_MAX];
+        getcwd(path, PATH_MAX);
+        fprintf(stderr, "%s\n", path);
+
+        config_destroy(&config);
+
+        return EXIT_SUCCESS;
+    }
 
     while (FCGX_Accept(&in, &out, &err, &envp) >= 0)
     {
