@@ -151,6 +151,23 @@ char *get_path_of_config_file() {
         "/usr/local/etc/panel.conf",
         "panel.conf"
     };
+
+    char config_file[PATH_MAX];
+    getcwd(config_file, PATH_MAX);
+    sprintf(config_file, "%s/%s", config_file, config_files[2]);
+    if (access(config_file, F_OK) == 0) {
+        return strdup(config_file);
+    }
+
+    if (access(config_files[1], F_OK) == 0) {
+        return strdup(config_files[1]);
+    }
+
+    if (access(config_files[0], F_OK) == 0) {
+        return strdup(config_files[0]);
+    }
+
+    return NULL;
 }
 
 int main(int argc, char **argv)
@@ -161,21 +178,38 @@ int main(int argc, char **argv)
 
     const char *title = "Postfix Mail Queue";
 
-    if (FCGX_IsCGI()) {
-        config_init(&config);
+    config_init(&config);
 
-        char path[PATH_MAX];
-        getcwd(path, PATH_MAX);
-        fprintf(stderr, "%s\n", path);
-
+    char *config_path = get_path_of_config_file();
+    if (config_path == NULL) {
+        perror("get_path_of_config_file");
         config_destroy(&config);
 
-        return EXIT_SUCCESS;
+        return EXIT_FAILURE;
+    }
+
+    if(!config_read_file(&config, config_path))
+    {
+        fprintf(stderr, "%s:%d - %s\n", config_error_file(&config), config_error_line(&config),
+            config_error_text(&config));
+        config_destroy(&config);
+
+        return EXIT_FAILURE;
+    }
+
+    free(config_path);
+
+    const char *postqueue_command;
+    if(!config_lookup_string(&config, "postqueue_command", &postqueue_command)) {
+        fprintf(stderr, "No 'postqueue_command' setting in configuration file.\n");
+        config_destroy(&config);
+
+        return EXIT_FAILURE;
     }
 
     while (FCGX_Accept(&in, &out, &err, &envp) >= 0)
     {
-        FILE *stream = popen("cat queue.json", "r");
+        FILE *stream = popen(postqueue_command, "r");
         if (stream == NULL)
         {
             perror("popen");
@@ -200,6 +234,8 @@ int main(int argc, char **argv)
         free(postqueue);
         jzon_free(jzon);
     }
+
+    config_destroy(&config);
 
     return EXIT_SUCCESS;
 }
