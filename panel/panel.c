@@ -153,8 +153,11 @@ char *get_path_of_config_file() {
     };
 
     char config_file[PATH_MAX];
-    getcwd(config_file, PATH_MAX);
-    sprintf(config_file, "%s/%s", config_file, config_files[2]);
+    if (getcwd(config_file, PATH_MAX) == NULL) {
+        return NULL;
+    }
+
+    sprintf(config_file + strlen(config_file), "/%s", config_files[2]);
     if (access(config_file, F_OK) == 0) {
         return strdup(config_file);
     }
