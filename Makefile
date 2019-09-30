@@ -7,7 +7,7 @@ volume:
 	@docker volume create listy
 
 run: volume
-	@docker run -d --name=listy -h server.pfohl.email -p 80:80 -p 25:25 -v listy:/data -e LISTY_DOMAIN='lists.pfohl.email' apfohl/listy
+	@docker run -d --name=listy -h server.pfohl.email -p 8080:80 -p 2525:25 -v listy:/data -e LISTY_DOMAIN='lists.pfohl.email' apfohl/listy
 
 shell:
 	@docker exec -it listy sh

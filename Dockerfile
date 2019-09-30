@@ -36,11 +36,31 @@ COPY postfix/main.cf /etc/postfix/main.cf
 COPY postfix/supervisord.conf /etc/supervisord.d/postfix.conf
 
 # Foreground
-RUN apk add alpine-sdk
+RUN apk add alpine-sdk flex fcgi-dev libconfig-dev
 COPY foreground /foreground
 RUN make -C foreground
 RUN mv /foreground/foreground /usr/local/bin/foreground
 RUN rm -r /foreground
+
+# JZON
+ADD https://github.com/apfohl/jzon/archive/v1.0.0.tar.gz /
+RUN tar xf v1.0.0.tar.gz
+RUN make -C jzon-1.0.0 CFLAGS='-std=gnu11 -Os -Wall -Wextra -Wpedantic -Wstrict-overflow' install
+RUN rm -r jzon-1.0.0 v1.0.0.tar.gz
+
+# C HTML Template Library
+ADD https://github.com/apfohl/ctemplate/archive/v1.0.0.tar.gz /
+RUN tar xf v1.0.0.tar.gz
+RUN make -C ctemplate-1.0.0 install
+RUN rm -r ctemplate-1.0.0 v1.0.0.tar.gz
+
+# Panel
+COPY panel /panel
+RUN make -C panel
+RUN mv /panel/panel /usr/local/bin/panel
+RUN rm -r /panel
+RUN echo 'postqueue_command = "/usr/sbin/postqueue -j";' > /etc/panel.conf
+COPY panel/supervisord.conf /etc/supervisord.d/panel.conf
 
 # Mailman
 RUN apk add python2 python2-dev py2-pip
