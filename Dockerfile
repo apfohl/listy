@@ -7,6 +7,11 @@ ARG MAILMAN_VERSION=$MAILMAN_MINOR_VERSION.$MAILMAN_PATCH_VERSION
 RUN apk update
 RUN apk add vim
 
+# Timezone
+RUN apk add tzdata
+RUN cp /usr/share/zoneinfo/Europe/Berlin /etc/localtime
+RUN echo "Europe/Berlin" >> /etc/timezone
+
 # General
 RUN mv /etc/profile.d/color_prompt /etc/profile.d/color_prompt.sh
 RUN mkdir -p /data/logs /init
@@ -61,6 +66,7 @@ RUN mv /panel/panel /usr/local/bin/panel
 RUN rm -r /panel
 RUN echo 'postqueue_command = "/usr/sbin/postqueue -j";' > /etc/panel.conf
 COPY panel/supervisord.conf /etc/supervisord.d/panel.conf
+COPY panel/auth_nginx /etc/nginx/auth
 
 # Mailman
 RUN apk add python2 python2-dev py2-pip
