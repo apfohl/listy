@@ -1,13 +1,13 @@
 .PHONY: build volume run shell destroy clean
 
 build:
-	@docker build -t apfohl/listy .
+	@docker build -t apfohl/listy:testing .
 
 volume:
 	@docker volume create listy
 
 run: volume
-	@docker run -d --name=listy -h server.pfohl.email -p 8080:80 -p 2525:25 -v listy:/data -e LISTY_DOMAIN='lists.pfohl.email' apfohl/listy
+	@docker run -d --name=listy -h server.pfohl.email -p 8080:80 -p 2525:25 -v listy:/data -e LISTY_DOMAIN='lists.pfohl.email' apfohl/listy:testing
 
 shell:
 	@docker exec -it listy sh

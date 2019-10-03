@@ -20,6 +20,11 @@ void map_to_json_array(const char *line, size_t line_length, void **output)
         strcpy(*result, "[]");
     }
 
+    if (line == NULL || line_length == 0)
+    {
+        return;
+    }
+
     ssize_t output_length = strlen(*result);
 
     size_t new_size =
@@ -42,25 +47,25 @@ void read_lines(FILE *stream, void (*map)(const char *, size_t, void **), void *
 
     for (ssize_t nread = 0; nread != -1; nread = getline(&line, &line_length, stream))
     {
+        map(line, line_length, output);
+
         if (nread == 0)
         {
             continue;
         }
-
-        map(line, line_length, output);
     }
 
     free(line);
 }
 
-static char *render_template(const char *path, TMPL_varlist *varlist)
+static char *render_template(const char *template_path, TMPL_varlist *varlist)
 {
     char *template = NULL;
     size_t template_size = 0;
 
     FILE *template_stream = open_memstream(&template, &template_size);
 
-    TMPL_write(path, NULL, NULL, varlist, template_stream, NULL);
+    TMPL_write(template_path, NULL, NULL, varlist, template_stream, NULL);
 
     fflush(template_stream);
     fclose(template_stream);
@@ -68,19 +73,17 @@ static char *render_template(const char *path, TMPL_varlist *varlist)
     return template;
 }
 
-static char *render_layout(const char *path, const char *title, const char *content)
+static char *render_layout(const char *template_path, const char *title, const char *content)
 {
-
     TMPL_varlist *varlist = TMPL_add_var(NULL, "title", title, "content", content, 0);
-    char *template = render_template(path, varlist);
+    char *template = render_template(template_path, varlist);
     TMPL_free_varlist(varlist);
 
     return template;
 }
 
-static char *render_postqueue(struct jzon *jzon)
+static char *render_postqueue(const char *template_path, struct jzon *jzon)
 {
-
     TMPL_varlist *mainlist = NULL;
     TMPL_loop *queue_entries = NULL;
 
@@ -137,7 +140,7 @@ static char *render_postqueue(struct jzon *jzon)
     mainlist = TMPL_add_loop(mainlist, "queue_entries", queue_entries);
 
     // render template
-    char *postqueue = render_template("templates/postqueue.tmpl", mainlist);
+    char *postqueue = render_template(template_path, mainlist);
 
     // free varlist
     TMPL_free_varlist(mainlist);
@@ -145,28 +148,32 @@ static char *render_postqueue(struct jzon *jzon)
     return postqueue;
 }
 
-char *get_path_of_config_file() {
+char *get_path_of_config_file()
+{
     const char *config_files[] = {
         "/etc/panel.conf",
         "/usr/local/etc/panel.conf",
-        "panel.conf"
-    };
+        "panel.conf"};
 
     char config_file[PATH_MAX];
-    if (getcwd(config_file, PATH_MAX) == NULL) {
+    if (getcwd(config_file, PATH_MAX) == NULL)
+    {
         return NULL;
     }
 
     sprintf(config_file + strlen(config_file), "/%s", config_files[2]);
-    if (access(config_file, F_OK) == 0) {
+    if (access(config_file, F_OK) == 0)
+    {
         return strdup(config_file);
     }
 
-    if (access(config_files[1], F_OK) == 0) {
+    if (access(config_files[1], F_OK) == 0)
+    {
         return strdup(config_files[1]);
     }
 
-    if (access(config_files[0], F_OK) == 0) {
+    if (access(config_files[0], F_OK) == 0)
+    {
         return strdup(config_files[0]);
     }
 
@@ -184,17 +191,18 @@ int main(int argc, char **argv)
     config_init(&config);
 
     char *config_path = get_path_of_config_file();
-    if (config_path == NULL) {
+    if (config_path == NULL)
+    {
         perror("get_path_of_config_file");
         config_destroy(&config);
 
         return EXIT_FAILURE;
     }
 
-    if(!config_read_file(&config, config_path))
+    if (!config_read_file(&config, config_path))
     {
         fprintf(stderr, "%s:%d - %s\n", config_error_file(&config), config_error_line(&config),
-            config_error_text(&config));
+                config_error_text(&config));
         config_destroy(&config);
 
         return EXIT_FAILURE;
@@ -203,8 +211,18 @@ int main(int argc, char **argv)
     free(config_path);
 
     const char *postqueue_command;
-    if(!config_lookup_string(&config, "postqueue_command", &postqueue_command)) {
+    if (!config_lookup_string(&config, "postqueue_command", &postqueue_command))
+    {
         fprintf(stderr, "No 'postqueue_command' setting in configuration file.\n");
+        config_destroy(&config);
+
+        return EXIT_FAILURE;
+    }
+
+    const char *template_directory;
+    if (!config_lookup_string(&config, "template_directory", &template_directory))
+    {
+        fprintf(stderr, "No 'template_directory' setting in configuration file.\n");
         config_destroy(&config);
 
         return EXIT_FAILURE;
@@ -228,8 +246,12 @@ int main(int argc, char **argv)
 
         FCGX_FPrintF(out, "Content-type: text/html\nStatus: 200\r\n\r\n");
 
-        char *postqueue = render_postqueue(jzon);
-        char *layout = render_layout("templates/layout.tmpl", title, postqueue);
+        char template_path[PATH_MAX];
+        sprintf(template_path, "%s/%s", template_directory, "postqueue.tmpl");
+        char *postqueue = render_postqueue(template_path, jzon);
+
+        sprintf(template_path, "%s/%s", template_directory, "layout.tmpl");
+        char *layout = render_layout(template_path, title, postqueue);
 
         FCGX_FPrintF(out, layout);
 

@@ -63,8 +63,10 @@ RUN rm -r ctemplate-1.0.0 v1.0.0.tar.gz
 COPY panel /panel
 RUN make -C panel
 RUN mv /panel/panel /usr/local/bin/panel
+COPY panel/templates /usr/local/share/panel
 RUN rm -r /panel
-RUN echo 'postqueue_command = "/usr/sbin/postqueue -j";' > /etc/panel.conf
+RUN echo 'template_directory = "/usr/local/share/panel";' >> /etc/panel.conf
+RUN echo 'postqueue_command = "/usr/sbin/postqueue -j";' >> /etc/panel.conf
 COPY panel/supervisord.conf /etc/supervisord.d/panel.conf
 COPY panel/auth_nginx /etc/nginx/auth
 
