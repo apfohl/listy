@@ -1,30 +1,11 @@
-FROM alpine:latest
+FROM apfohl/service-base:latest
 
 ARG MAILMAN_MINOR_VERSION=2.1
 ARG MAILMAN_PATCH_VERSION=29
 ARG MAILMAN_VERSION=$MAILMAN_MINOR_VERSION.$MAILMAN_PATCH_VERSION
 
-RUN apk update
-RUN apk add vim
-
-# Timezone
-RUN apk add tzdata
-RUN cp /usr/share/zoneinfo/Europe/Berlin /etc/localtime
-RUN echo "Europe/Berlin" >> /etc/timezone
-
 # General
-RUN mv /etc/profile.d/color_prompt /etc/profile.d/color_prompt.sh
-RUN mkdir -p /data/logs /init
-
-# Supervisor
-RUN apk add supervisor
-RUN mkdir -p /etc/supervisord.d
-COPY supervisord/supervisord.conf /etc/supervisord.conf
-
-# Rsyslogd
-RUN apk add rsyslog
-COPY rsyslogd/rsyslog.conf /etc/rsyslog.conf
-COPY rsyslogd/supervisord.conf /etc/supervisord.d/rsyslogd.conf
+RUN apk update
 
 # NGINX
 RUN addgroup -S www-data && adduser -S www-data -G www-data
@@ -87,18 +68,15 @@ COPY mailman/mm_cfg.py /usr/local/mailman/Mailman/mm_cfg.py
 COPY mailman/nginx.conf /etc/nginx/conf.d/mailman.conf
 COPY mailman/supervisord.conf /etc/supervisord.d/mailman.conf
 COPY mailman/path.sh /etc/profile.d/path.sh
+RUN mkdir -p /init
 RUN mv /data/mailman /init
 
 # FCGI Wrap
 RUN apk add spawn-fcgi fcgiwrap
 COPY fcgiwrap/supervisord.conf /etc/supervisord.d/fcgiwrap.conf
 
+# Boot
+COPY boot/* /boot.d/
+
 # Network
 EXPOSE 25/tcp 80/tcp
-
-# Environment
-ENV ENV /etc/profile
-
-# Entrypoint
-COPY boot.sh /boot.sh
-ENTRYPOINT ["sh", "boot.sh"]
